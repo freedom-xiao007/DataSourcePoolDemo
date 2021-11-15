@@ -1,12 +1,9 @@
 package jdbcRaw;
 
 import com.alibaba.druid.pool.DruidDataSource;
-import com.alibaba.druid.pool.DruidDataSourceFactory;
-import self.pool.SelfDatasource;
+import self.pool.SelfDataSource;
 
-import javax.sql.DataSource;
 import java.sql.*;
-import java.util.Properties;
 
 public class Main {
 
@@ -14,7 +11,11 @@ public class Main {
     static final String USER = "sa";
     static final String PASS = "sa";
     static final String QUERY = "SELECT id, name FROM user_example";
+    static final int queryAmount = 5;
 
+    /**
+     * 生成数据
+     */
     private static void initData() {
         final String drop = "drop table `user_example` if exists;";
         final String createTable = "CREATE TABLE IF NOT EXISTS `user_example` (" +
@@ -22,7 +23,6 @@ public class Main {
                 "`name` varchar(100) NOT NULL" +
                 ");";
         final String addUser = "insert into user_example (name) values(%s)";
-        // Open a connection
         try(Connection conn = DriverManager.getConnection(DB_URL, USER, PASS);
             Statement stmt = conn.createStatement()) {
             stmt.execute(drop);
@@ -36,21 +36,26 @@ public class Main {
         }
     }
 
-    private static void select() {
-        // Open a connection
-        try(Connection conn = DriverManager.getConnection(DB_URL, USER, PASS);
-            Statement stmt = conn.createStatement();
-            ResultSet rs = stmt.executeQuery(QUERY);) {
-            // Extract data from result set
-            while (rs.next()) {
-                // Retrieve by column name
-                System.out.print("ID: " + rs.getInt("id"));
-                System.out.print(", name: " + rs.getString("name"));
-                System.out.print(";");
+    /**
+     * 原生JDBC查询
+     */
+    private static void rawExample() {
+        for (int i=0; i<queryAmount; i++) {
+            // Open a connection
+            try(Connection conn = DriverManager.getConnection(DB_URL, USER, PASS);
+                Statement stmt = conn.createStatement();
+                ResultSet rs = stmt.executeQuery(QUERY);) {
+                // Extract data from result set
+                while (rs.next()) {
+                    // Retrieve by column name
+                    System.out.print("ID: " + rs.getInt("id"));
+                    System.out.print(", name: " + rs.getString("name"));
+                    System.out.print(";");
+                }
+                System.out.println();
+            } catch (SQLException e) {
+                e.printStackTrace();
             }
-            System.out.println();
-        } catch (SQLException e) {
-            e.printStackTrace();
         }
     }
 
@@ -58,9 +63,7 @@ public class Main {
         initData();
 
         long current = System.currentTimeMillis();
-        for (int i=0; i<10; i++) {
-            select();
-        }
+        rawExample();
         System.out.printf("原生查询耗时：%d 毫秒\n", System.currentTimeMillis() - current);
 
         current = System.currentTimeMillis();
@@ -74,9 +77,12 @@ public class Main {
         Thread.sleep(3000);
     }
 
+    /**
+     * 自定义数据库连接池查询
+     */
     private static void selfExample() {
-        final SelfDatasource dataSource = new SelfDatasource(DB_URL, USER, PASS);
-        for (int i=0; i<10; i++) {
+        final SelfDataSource dataSource = new SelfDataSource(DB_URL, USER, PASS);
+        for (int i=0; i<queryAmount; i++) {
             // Open a connection
             try(Connection conn = dataSource.getConnection();
                 Statement stmt = conn.createStatement();
@@ -95,13 +101,10 @@ public class Main {
         }
     }
 
+    /**
+     * Alibaba Druid查询
+     */
     private static void druidExample() throws Exception {
-        final Properties properties = new Properties();
-        properties.setProperty("url", DB_URL);
-        properties.setProperty("username", USER);
-        properties.setProperty("password", PASS);
-        properties.setProperty("driverClass", "org.h2.Driver");
-
         DruidDataSource dataSource = new DruidDataSource();
         dataSource.setInitialSize(1);
         dataSource.setMaxActive(1);
@@ -111,7 +114,7 @@ public class Main {
         dataSource.setUsername(USER);
         dataSource.setPassword(PASS);
 
-        for (int i=0; i<10; i++) {
+        for (int i=0; i<queryAmount; i++) {
             // Open a connection
             try(Connection conn = dataSource.getConnection();
                 Statement stmt = conn.createStatement();

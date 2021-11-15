@@ -9,23 +9,22 @@ import java.util.concurrent.Executor;
 
 public class SelfPoolConnection implements javax.sql.PooledConnection, Connection {
 
-    private final SelfDatasource selfDatasource;
-    private final String url;
-    private final String username;
-    private final String password;
-    private boolean init = false;
+    private final SelfDataSource selfDatasource;
     private Connection connection;
 
-    public SelfPoolConnection(final SelfDatasource selfDatasource, final String url, final String username, final String password) {
+    public SelfPoolConnection(final SelfDataSource selfDatasource, final String url, final String username, final String password) {
         this.selfDatasource = selfDatasource;
-        this.url = url;
-        this.username = username;
-        this.password = password;
+        System.out.println("初始化物理连接");
+        try {
+            connection = DriverManager.getConnection(url, username, password);
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
     }
 
     @Override
     public Statement createStatement() throws SQLException {
-        return null;
+        return connection.createStatement();
     }
 
     @Override
@@ -290,15 +289,14 @@ public class SelfPoolConnection implements javax.sql.PooledConnection, Connectio
 
     @Override
     synchronized public Connection getConnection() throws SQLException {
-        if (!init) {
-            System.out.println("初始化物理连接");
-            connection = DriverManager.getConnection(url, username, password);
-            init = true;
-            return connection;
-        }
-        return connection;
+        return this;
     }
 
+    /**
+     * 关闭连接，调用自定义DataSource用于复用
+     * 目前感觉这样不规范，但时间紧张，前期先简单实现
+     * @throws SQLException
+     */
     @Override
     public void close() throws SQLException {
         selfDatasource.recycle(this);
