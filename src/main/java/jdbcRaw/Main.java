@@ -59,12 +59,37 @@ public class Main {
         }
     }
 
+    /**
+     * 原生JDBC查询 单连接查询
+     */
+    private static void rawSingleExample() {
+        try(Connection conn = DriverManager.getConnection(DB_URL, USER, PASS)) {
+            for (int i=0; i<queryAmount; i++) {
+                try (Statement stmt = conn.createStatement();
+                     ResultSet rs = stmt.executeQuery(QUERY);) {
+                    while (rs.next()) {
+                        System.out.print("ID: " + rs.getInt("id"));
+                        System.out.print(", name: " + rs.getString("name"));
+                        System.out.print(";");
+                    }
+                    System.out.println();
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
     public static void main(String[] args) throws Exception {
         initData();
 
         long current = System.currentTimeMillis();
         rawExample();
         System.out.printf("原生查询耗时：%d 毫秒\n", System.currentTimeMillis() - current);
+
+        current = System.currentTimeMillis();
+        rawSingleExample();
+        System.out.printf("原生Jdbc单连接查询耗时：%d 毫秒\n", System.currentTimeMillis() - current);
 
         current = System.currentTimeMillis();
         druidExample();
