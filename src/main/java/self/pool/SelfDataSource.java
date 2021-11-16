@@ -33,7 +33,7 @@ public class SelfDataSource implements DataSource {
      * 从正在使用连接池中移除，放入空闲连接池中
      * @param selfPoolConnection 自定义Connection
      */
-    public void recycle(final SelfPoolConnection selfPoolConnection) {
+    synchronized public void recycle(final SelfPoolConnection selfPoolConnection) {
         running.remove(selfPoolConnection);
         idle.add(selfPoolConnection);
         System.out.println("回收连接");

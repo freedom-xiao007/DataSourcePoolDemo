@@ -80,52 +80,6 @@ public class Main {
         }
     }
 
-    public static void main(String[] args) throws Exception {
-        initData();
-
-        long current = System.currentTimeMillis();
-        rawExample();
-        System.out.printf("原生查询耗时：%d 毫秒\n", System.currentTimeMillis() - current);
-
-        current = System.currentTimeMillis();
-        rawSingleExample();
-        System.out.printf("原生Jdbc单连接查询耗时：%d 毫秒\n", System.currentTimeMillis() - current);
-
-        current = System.currentTimeMillis();
-        druidExample();
-        System.out.printf("连接池查询耗时：%d 毫秒\n", System.currentTimeMillis() - current);
-
-        current = System.currentTimeMillis();
-        selfExample();
-        System.out.printf("自写连接池查询耗时：%d 毫秒\n", System.currentTimeMillis() - current);
-
-        Thread.sleep(3000);
-    }
-
-    /**
-     * 自定义数据库连接池查询
-     */
-    private static void selfExample() {
-        final SelfDataSource dataSource = new SelfDataSource(DB_URL, USER, PASS);
-        for (int i=0; i<queryAmount; i++) {
-            // Open a connection
-            try(Connection conn = dataSource.getConnection();
-                Statement stmt = conn.createStatement();
-                ResultSet rs = stmt.executeQuery(QUERY)) {
-                // Extract data from result set
-                while (rs.next()) {
-                    // Retrieve by column name
-                    System.out.print("ID: " + rs.getInt("id"));
-                    System.out.print(", name: " + rs.getString("name"));
-                    System.out.print(";");
-                }
-                System.out.println();
-            } catch (SQLException e) {
-                e.printStackTrace();
-            }
-        }
-    }
-
     /**
      * Alibaba Druid查询
      */
@@ -156,5 +110,57 @@ public class Main {
                 e.printStackTrace();
             }
         }
+    }
+
+    /**
+     * 自定义数据库连接池查询
+     */
+    private static void selfExample() {
+        final SelfDataSource dataSource = new SelfDataSource(DB_URL, USER, PASS);
+        for (int i=0; i<queryAmount; i++) {
+            // Open a connection
+            try(Connection conn = dataSource.getConnection();
+                Statement stmt = conn.createStatement();
+                ResultSet rs = stmt.executeQuery(QUERY)) {
+                // Extract data from result set
+                while (rs.next()) {
+                    // Retrieve by column name
+                    System.out.print("ID: " + rs.getInt("id"));
+                    System.out.print(", name: " + rs.getString("name"));
+                    System.out.print(";");
+                }
+                System.out.println();
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    /**
+     * 单线程测试代码
+     * 注意：不要一起运行测试，感觉有缓存，导致在后面运行的查询速度很快
+     *      需要运行那个单独放开，其他注释掉
+     * @param args args
+     * @throws Exception e
+     */
+    public static void main(String[] args) throws Exception {
+//        initData();
+
+        final StringBuilder result = new StringBuilder();
+        long current = System.currentTimeMillis();
+
+//        rawExample();
+//        result.append(String.format("原生查询耗时：%d 毫秒\n", System.currentTimeMillis() - current));
+
+//        rawSingleExample();
+//        result.append(String.format("原生Jdbc单连接查询耗时：%d 毫秒\n", System.currentTimeMillis() - current));
+
+//        druidExample();
+//        result.append(String.format("Druid连接池查询耗时：%d 毫秒\n", System.currentTimeMillis() - current));
+
+        selfExample();
+        result.append(String.format("自写连接池查询耗时：%d 毫秒\n", System.currentTimeMillis() - current));
+
+        System.out.println(result);
     }
 }
