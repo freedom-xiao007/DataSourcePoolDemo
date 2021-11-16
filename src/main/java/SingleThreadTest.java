@@ -1,11 +1,9 @@
-package jdbcRaw;
-
 import com.alibaba.druid.pool.DruidDataSource;
 import self.pool.SelfDataSource;
 
 import java.sql.*;
 
-public class Main {
+public class SingleThreadTest {
 
     static final String DB_URL = "jdbc:h2:file:./demo-db";
     static final String USER = "sa";
