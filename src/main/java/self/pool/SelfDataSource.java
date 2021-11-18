@@ -66,13 +66,13 @@ public class SelfDataSource implements DataSource {
      * 从正在使用连接池中移除，放入空闲连接池中
      * @param selfPoolConnection 自定义Connection
      */
-    synchronized public void recycle(final SelfPoolConnection selfPoolConnection) {
+    public void recycle(final SelfPoolConnection selfPoolConnection) {
         try {
             System.out.println("回收连接,开始");
             while (!active.remove(selfPoolConnection)){
                 System.out.println("!active.remove");
             }
-            while (idle.offer(selfPoolConnection, timeout, TimeUnit.NANOSECONDS)) {
+            while (!idle.offer(selfPoolConnection, timeout, TimeUnit.NANOSECONDS)) {
                 System.out.println("idle.offer");
             }
             System.out.println("回收连接,结束\n");
@@ -89,7 +89,7 @@ public class SelfDataSource implements DataSource {
      * @throws SQLException
      */
     @Override
-    synchronized public Connection getConnection() throws SQLException {
+    public Connection getConnection() throws SQLException {
         SelfPoolConnection connection;
         try {
             System.out.println("获取连接，开始");
