@@ -69,12 +69,8 @@ public class SelfDataSource implements DataSource {
     public void recycle(final SelfPoolConnection selfPoolConnection) {
         try {
             System.out.println("回收连接,开始");
-            while (!active.remove(selfPoolConnection)){
-                System.out.println("!active.remove");
-            }
-            while (!idle.offer(selfPoolConnection, timeout, TimeUnit.NANOSECONDS)) {
-                System.out.println("idle.offer");
-            }
+            while (!active.remove(selfPoolConnection)) {}
+            idle.put(selfPoolConnection);
             System.out.println("回收连接,结束\n");
         } catch (InterruptedException e) {
             e.printStackTrace();
@@ -90,16 +86,10 @@ public class SelfDataSource implements DataSource {
      */
     @Override
     public Connection getConnection() throws SQLException {
-        SelfPoolConnection connection;
         try {
             System.out.println("获取连接，开始");
-            connection = idle.poll(timeout, TimeUnit.NANOSECONDS);
-            while (connection == null) {
-                connection = idle.poll(timeout, TimeUnit.NANOSECONDS);
-            }
-            while (!active.offer(connection, timeout, TimeUnit.NANOSECONDS)){
-                System.out.println("active.offer");
-            }
+            final SelfPoolConnection connection = idle.take();
+            active.put(connection);
             System.out.println("获取连接，结束\n");
             return connection;
         } catch (InterruptedException e) {
@@ -153,6 +143,6 @@ public class SelfDataSource implements DataSource {
     }
 
     public int getConnectionCount() {
-        return 0;
+        return connectCount.get();
     }
 }

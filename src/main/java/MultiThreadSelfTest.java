@@ -22,7 +22,7 @@ public class MultiThreadSelfTest {
         properties.setProperty("url", "jdbc:h2:file:./demo-db");
         properties.setProperty("username", "sa");
         properties.setProperty("password", "sa");
-        properties.setProperty("maxActive", "10");
+        properties.setProperty("maxActive", "5");
         properties.setProperty("initCount", "5");
 
         SelfDataSource dataSource = new SelfDataSource(properties);
@@ -42,19 +42,19 @@ public class MultiThreadSelfTest {
             break;
         }
 
-        long cost = 0;
-        for (int i = 0; i < 10; i++) {
-            cost += (Long)(fs[i].get());
-        }
-        System.out.printf("一共花费：%d \n", cost);
-
-        Thread.sleep(3000);
-        fs = new FutureTask[5];
-        for (int i=0; i<5; i++) {
-            fs[i] = new FutureTask(() -> druidQuery(dataSource));
-            new Thread(fs[i]).start();
-        }
-
+//        long cost = 0;
+//        for (int i = 0; i < 10; i++) {
+//            cost += (Long)(fs[i].get());
+//        }
+//        System.out.printf("一共花费：%d \n", cost);
+//
+//        Thread.sleep(3000);
+//        fs = new FutureTask[5];
+//        for (int i=0; i<5; i++) {
+//            fs[i] = new FutureTask(() -> druidQuery(dataSource));
+//            new Thread(fs[i]).start();
+//        }
+//
         Thread.sleep(3000);
         System.out.printf("当前数据库连接数：%d\n", dataSource.getConnectionCount());
     }
@@ -102,7 +102,7 @@ public class MultiThreadSelfTest {
             e.printStackTrace();
         }
         final long cost = System.currentTimeMillis() - cur;
-        System.out.println(cost);
+        System.out.println("查询结束，耗时：" + cost);
         return cost;
     }
 }
