@@ -7,7 +7,6 @@ import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
 import java.util.*;
 import java.util.concurrent.LinkedBlockingDeque;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
 import java.util.stream.IntStream;
@@ -52,7 +51,6 @@ public class SelfDataSource implements DataSource {
     }
 
     private void createPhysicsConnect() {
-        System.out.println("生成新物理连接");
         try {
             idle.put(new SelfPoolConnection(this, url, username, password));
             connectCount.addAndGet(1);
@@ -68,10 +66,9 @@ public class SelfDataSource implements DataSource {
      */
     public void recycle(final SelfPoolConnection selfPoolConnection) {
         try {
-            System.out.println("回收连接,开始");
             while (!active.remove(selfPoolConnection)) {}
-            idle.put(selfPoolConnection);
             System.out.println("回收连接,结束\n");
+            idle.put(selfPoolConnection);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
@@ -87,10 +84,9 @@ public class SelfDataSource implements DataSource {
     @Override
     public Connection getConnection() throws SQLException {
         try {
-            System.out.println("获取连接，开始");
             final SelfPoolConnection connection = idle.take();
-            active.put(connection);
             System.out.println("获取连接，结束\n");
+            active.put(connection);
             return connection;
         } catch (InterruptedException e) {
             e.printStackTrace();

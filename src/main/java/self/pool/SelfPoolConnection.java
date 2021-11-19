@@ -69,9 +69,7 @@ public class SelfPoolConnection implements Connection,javax.sql.PooledConnection
 
     @Override
     public void close() throws SQLException {
-        System.out.println("回收连接，开始");
         selfDatasource.recycle(this);
-        System.out.println("回收连接，结束");
     }
 
     @Override

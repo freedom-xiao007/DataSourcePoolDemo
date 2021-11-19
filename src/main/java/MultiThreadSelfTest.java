@@ -1,6 +1,7 @@
 import com.alibaba.druid.pool.DruidDataSource;
 import self.pool.SelfDataSource;
 
+import javax.sql.DataSource;
 import java.sql.*;
 import java.util.Properties;
 import java.util.concurrent.ExecutionException;
@@ -18,18 +19,35 @@ public class MultiThreadSelfTest {
         // 第一次运行可以初始化数据库数据，后面可以取消
 //        initData();
 
-        final Properties properties = new Properties();
-        properties.setProperty("url", "jdbc:h2:file:./demo-db");
-        properties.setProperty("username", "sa");
-        properties.setProperty("password", "sa");
-        properties.setProperty("maxActive", "5");
-        properties.setProperty("initCount", "5");
+//        final Properties properties = new Properties();
+//        properties.setProperty("url", "jdbc:h2:file:./demo-db");
+//        properties.setProperty("username", "sa");
+//        properties.setProperty("password", "sa");
+//        properties.setProperty("maxActive", "5");
+//        properties.setProperty("initCount", "5");
+//
+//        SelfDataSource dataSource = new SelfDataSource(properties);
+//        System.out.println("测试自写线程池");
+//        multiQuery(dataSource);
 
-        SelfDataSource dataSource = new SelfDataSource(properties);
+        System.out.println("测试Druid线程池");
+        DruidDataSource druidDataSource = new DruidDataSource();
+        druidDataSource.setInitialSize(0);
+        druidDataSource.setMaxActive(3);
+        druidDataSource.setMinIdle(2);
+        druidDataSource.setDriverClassName("org.h2.Driver");
+        druidDataSource.setUrl(DB_URL);
+        druidDataSource.setUsername(USER);
+        druidDataSource.setPassword(PASS);
+        multiQuery(druidDataSource);
+    }
 
+    private static void multiQuery(DataSource dataSource) {
+        System.out.println("初始化线程，开始启动测试");
+        long current = System.currentTimeMillis();
         FutureTask[] fs = new FutureTask[10];
         for (int i=0; i<10; i++) {
-            fs[i] = new FutureTask(() -> druidQuery(dataSource));
+            fs[i] = new FutureTask(() -> query(dataSource));
             new Thread(fs[i]).start();
         }
 
@@ -41,22 +59,30 @@ public class MultiThreadSelfTest {
             }
             break;
         }
+        System.out.println("所有线程已查询完毕，消耗时间为：" + (System.currentTimeMillis() - current));
+    }
 
-//        long cost = 0;
-//        for (int i = 0; i < 10; i++) {
-//            cost += (Long)(fs[i].get());
-//        }
-//        System.out.printf("一共花费：%d \n", cost);
-//
-//        Thread.sleep(3000);
-//        fs = new FutureTask[5];
-//        for (int i=0; i<5; i++) {
-//            fs[i] = new FutureTask(() -> druidQuery(dataSource));
-//            new Thread(fs[i]).start();
-//        }
-//
-        Thread.sleep(3000);
-        System.out.printf("当前数据库连接数：%d\n", dataSource.getConnectionCount());
+    private static long query(DataSource dataSource) {
+        System.out.println("开始执行查询");
+        final long cur = System.currentTimeMillis();
+        try(Connection conn = dataSource.getConnection();
+            Statement stmt = conn.createStatement();
+            ResultSet rs = stmt.executeQuery(QUERY)) {
+            // Extract data from result set
+            while (rs.next()) {
+                // Retrieve by column name
+//                System.out.print("ID: " + rs.getInt("id"));
+//                System.out.print(", name: " + rs.getString("name"));
+//                System.out.print(";");
+            }
+//            System.out.println();
+            Thread.sleep(1000);
+        } catch (SQLException | InterruptedException e) {
+            e.printStackTrace();
+        }
+        final long cost = System.currentTimeMillis() - cur;
+        System.out.println("查询结束，耗时：" + cost);
+        return cost;
     }
 
     /**
@@ -80,29 +106,5 @@ public class MultiThreadSelfTest {
         } catch (SQLException e) {
             e.printStackTrace();
         }
-    }
-
-    private static long druidQuery(SelfDataSource dataSource) {
-        System.out.println("开始执行查询");
-        final long cur = System.currentTimeMillis();
-        try(Connection conn = dataSource.getConnection();
-            Statement stmt = conn.createStatement();
-            ResultSet rs = stmt.executeQuery(QUERY)) {
-            // Extract data from result set
-            while (rs.next()) {
-                // Retrieve by column name
-//                System.out.print("ID: " + rs.getInt("id"));
-//                System.out.print(", name: " + rs.getString("name"));
-//                System.out.print(";");
-            }
-//            System.out.println();
-            Thread.sleep(1000);
-            System.out.printf("当前数据库连接数：%d\n", dataSource.getConnectionCount());
-        } catch (SQLException | InterruptedException e) {
-            e.printStackTrace();
-        }
-        final long cost = System.currentTimeMillis() - cur;
-        System.out.println("查询结束，耗时：" + cost);
-        return cost;
     }
 }
